@@ -10,6 +10,29 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, Clock, MapPin, ImageIcon, User, Mail } from "lucide-react"
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+// Función para guardar el evento en Firestore
+async function handleCreateEvent(eventData: any) {
+  try {
+    const docRef = await addDoc(collection(db, "events"), {
+      nombre: eventData.eventName,
+      fecha: eventData.date,
+      hora: eventData.time,
+      lugar: eventData.location,
+      descripcion: eventData.description,
+      imagenURL: eventData.imageUrl,
+      organizadorNombre: eventData.organizerName,
+      organizadorEmail: eventData.organizerEmail,
+    });
+    return docRef.id;
+  } catch (e) {
+    alert("Error guardando evento");
+    console.error(e);
+    return null;
+  }
+}
 
 export function CreateEventForm() {
   const router = useRouter()
@@ -32,13 +55,13 @@ export function CreateEventForm() {
       organizerEmail: formData.get("organizerEmail"),
     }
 
-    console.log("[v0] Event data submitted:", eventData)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const eventId = "1" // In a real app, this would come from the API response
-    router.push(`/evento/${eventId}/admin`)
+    // Guarda el evento en Firestore
+    const eventId = await handleCreateEvent(eventData)
+    if (eventId) {
+      router.push(`/evento/${eventId}/admin`)
+    } else {
+      setIsSubmitting(false)
+    }
   }
 
   return (
